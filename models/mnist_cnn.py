@@ -1,0 +1,152 @@
+import time
+import torch
+from torch.utils.data import Dataset
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+
+from abstractmodel import AbstractModel
+from hyperparameter import Hyperparameter
+
+from logger import Logger
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+training_data = datasets.MNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor()
+)
+
+test_data = datasets.MNIST(
+    root="data",
+    train=False,
+    download=True,
+    transform=ToTensor()
+)
+
+data_loader = torch.utils.data.DataLoader(dataset=training_data ,
+                                                batch_size=48,
+                                                shuffle=True,
+                                                drop_last=True)
+
+class MNIST_CNN(AbstractModel):
+    @staticmethod
+    def HyperparameterSpecification(): # Hyperparameter Specification
+        # Specify your hyperparameters
+        hyperparameter = Hyperparameter()
+        hyperparameter.Register("LearningRate", 0.001, (0, 0.01), False, False) # Float, Changable
+        hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
+        return hyperparameter
+        
+    def Build(self): # Build Model
+        _superself = self
+        # Define Your Model Here
+
+        # MNIST CNN MODEL
+        class CNN(torch.nn.Module):
+            def __init__(self):
+                super(CNN, self).__init__()
+                self.keep_prob = 0.5
+                # L1 ImgIn shape=(?, 28, 28, 1)
+                #    Conv     -> (?, 28, 28, 32)
+                #    Pool     -> (?, 14, 14, 32)
+                self.cm_layer1 = torch.nn.Sequential(
+                    torch.nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+                    torch.nn.ReLU(),
+                    torch.nn.MaxPool2d(kernel_size=2, stride=2))
+                # L2 ImgIn shape=(?, 14, 14, 32)
+                #    Conv      ->(?, 14, 14, 64)
+                #    Pool      ->(?, 7, 7, 64)
+                self.cm_layer2 = torch.nn.Sequential(
+                    torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                    torch.nn.ReLU(),
+                    torch.nn.MaxPool2d(kernel_size=2, stride=2))
+                # L3 ImgIn shape=(?, 7, 7, 64)
+                #    Conv      ->(?, 7, 7, 128)
+                #    Pool      ->(?, 4, 4, 128)
+                self.cm_layer3 = torch.nn.Sequential(
+                    torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                    torch.nn.ReLU(),
+                    torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
+
+                # L4 FC 4x4x128 inputs -> 625 outputs
+                self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, _superself.hyper.Get("FC_INPUT_SIZE"), bias=True)
+                torch.nn.init.xavier_uniform_(self.fc_layer1.weight)
+                self.fc_layer4 = torch.nn.Sequential(
+                    self.fc_layer1,
+                    torch.nn.ReLU(),
+                    torch.nn.Dropout(p=1 - self.keep_prob))
+                # L5 Final FC 625 inputs -> 10 outputs
+                self.fc_layer5 = torch.nn.Linear(_superself.hyper.Get("FC_INPUT_SIZE"), 10, bias=True)
+                torch.nn.init.xavier_uniform_(self.fc_layer5.weight)
+
+            def forward(self, x):
+                out = self.cm_layer1(x)
+                out = self.cm_layer2(out)
+                out = self.cm_layer3(out)
+                out = out.view(out.size(0), -1)   # Flatten them for FC
+                out = self.fc_layer4(out)
+                out = self.fc_layer5(out)
+                return out
+        # END OF MODEL
+
+        # OPTIMIZER
+        class AdjustableLearningRateOptimizer:
+            def __init__(self, params):
+                self.params = params
+                
+            def zero_grad(self):
+                for p in self.params:
+                    p.grad = None
+            
+            def step(self):
+                lr = _superself.hyper.Get("LearningRate")
+                with torch.no_grad():
+                    for p in self.params:
+                        p -= lr * p.grad
+        # END OF OPTIMIZER
+
+        self.model = CNN().to(device)
+        self.criterion = torch.nn.CrossEntropyLoss().to(device)
+        self.optimizer = AdjustableLearningRateOptimizer(self.model.parameters())
+    
+    def Train(self) -> float: # Train Model (for each Step)
+        
+        batch_time = time.time()
+        
+        avg_cost = 0
+        total_batch = len(data_loader)
+
+        for X, Y in data_loader: # mini batch - label
+            X = X.to(device)
+            Y = Y.to(device)
+            
+            self.optimizer.zero_grad()
+            hypothesis = self.model(X)
+            cost = self.criterion(hypothesis, Y)
+            cost.backward()
+            avg_cost += cost / total_batch
+            self.optimizer.step()
+        
+        batch_time = time.time() - batch_time
+
+        Logger.Print(self.name, True, '[Elapsed : {}] cost = {:>.9}'.format(batch_time, avg_cost))
+        
+        return avg_cost
+
+    
+    def Validate(self) -> tuple: # Validate Model
+        with torch.no_grad():
+            X_test = test_data.test_data.view(len(test_data), 1, 28, 28).float().to(device)
+            Y_test = test_data.test_labels.to(device)
+
+            prediction = self.model(X_test)
+            correct_prediction = torch.argmax(prediction, 1) == Y_test
+            accuracy = correct_prediction.float().mean()
+            loss = self.criterion(prediction, Y_test)
+        return loss, accuracy
+    
+    def Predict(self): # Make Prediction
+        pass
+
