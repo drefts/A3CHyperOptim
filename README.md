@@ -12,3 +12,6 @@ You can find an example in `models/mnist_cnn.py`
 
 `hyperparameter.py` defines the general hyperparameter space.
 
+### First Experiment
+
+![Figure_1](https://user-images.githubusercontent.com/53331577/144956770-21884871-0c8e-4cfa-9b28-8ed7c88ffa14.png)
