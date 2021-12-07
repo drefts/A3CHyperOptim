@@ -8,7 +8,7 @@ The models using abstractmodel contains hyperparameter specification, the ML mod
 
 You can find an example in `models/mnist_cnn.py`
 
-`environment.py` defines a gym environment that training a abstractmodel.
+`environment.py` defines a gym environment that training a abstractmodel. It contains state, action, reward logic.
 
 `hyperparameter.py` defines the general hyperparameter space.
 
