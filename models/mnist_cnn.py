@@ -35,7 +35,7 @@ class MNIST_CNN(AbstractModel):
     def HyperparameterSpecification(): # Hyperparameter Specification
         # Specify your hyperparameters
         hyperparameter = Hyperparameter()
-        hyperparameter.Register("LearningRate", 0.001, (0, 0.01), False, False) # Float, Changable
+        hyperparameter.Register("LearningRate", 1, (0, 10), False, False) # Float, Changable
         hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
         return hyperparameter
         
