@@ -5,22 +5,22 @@ UPDATE_GLOBAL_ITER = 4
 GAMMA = 0.9
 
 # Maximum episodes of RL algorithm
-MAX_EP = 3000
+MAX_EP = 2000
 
 # Maximum step size for each episodes (epochs for the model)
-MAX_EP_STEP = 12
+MAX_EP_STEP = 16
 
 # The number of dropping worker
 N_DROP = 1
 
 # The number of total processes (workers)
-N_WORKERS = 8
+N_WORKERS = 4
 
 DIR_RESULT = "./result"
 
 DIR_CHECKPOINT = "./checkpoint"
 
-GPU_MAP = [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
+GPU_MAP = [1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
 
 def setup() -> list:
     from pathlib import Path

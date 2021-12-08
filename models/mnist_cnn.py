@@ -46,8 +46,8 @@ class MNIST_CNN(AbstractModel):
     def HyperparameterSpecification(): # Hyperparameter Specification
         # Specify your hyperparameters
         hyperparameter = Hyperparameter()
-        hyperparameter.Register("LearningRate", 0.001, (0, 0.005), False, False) # Float, Changable
-        hyperparameter.Register("WeightDecay", 0.001, (0, 0.01), False, False) # Float, Changable
+        hyperparameter.Register("LearningRate", 0.001, (0, 0.002), False, False) # Float, Changable
+        hyperparameter.Register("WeightDecay", 0.005, (0, 0.01), False, False) # Float, Changable
 
         # Model structure related hyperparameter was disabled
         # hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
@@ -150,7 +150,7 @@ class MNIST_CNN(AbstractModel):
             # Apply LR
             self.optimizer.param_groups[i]['lr'] = self.hyper.Get("LearningRate")
             # Apply WeightDecay        
-            self.optimizer.param_groups[i]['lr'] = self.hyper.Get("WeightDecay")
+            self.optimizer.param_groups[i]['weight_decay'] = self.hyper.Get("WeightDecay")
 
         for X, Y in data_loader: # mini batch - label
             X = X.to(self.device)
