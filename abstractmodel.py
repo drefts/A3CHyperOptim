@@ -33,6 +33,9 @@ class AbstractModel:
     def Predict(self): # Make Prediction
         pass
     
+    def GetParameter(self):
+        return self.model.parameters()
+
     def GetParameterSize(self):
         self.model.parameters()
         return convert_parameters.parameters_to_vector(self.model.parameters()).size()[0]

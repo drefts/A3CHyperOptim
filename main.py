@@ -16,6 +16,7 @@ from utils import state_wrap, set_init, push_and_pull, record, GetMaxParam
 import torch.nn.functional as F
 import torch.multiprocessing as mp
 from shared_adam import SharedAdam
+from torch.nn.utils import convert_parameters
 import math, os
 
 from environment import HPOptEnv
@@ -50,9 +51,6 @@ class Net(nn.Module):
         self.v = nn.Linear(10, 1)
         set_init([self.a1, self.mu, self.sigma, self.c1, self.v])
         self.distribution = torch.distributions.MultivariateNormal
-        self.from_id = torch.multiprocessing.Value('i')
-        self.from_id.value = -1
-        self.param_queue = torch.multiprocessing.Queue()
 
     def forward(self, x):
         a1 = F.relu6(self.a1(x))
@@ -99,7 +97,8 @@ class Worker(mp.Process):
         self.global_states = global_states
         self.global_params = global_params
         self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, N_S, self.name)
-        self.from_id = mp.Value('i')
+        self.from_id = torch.multiprocessing.Value('i')
+        self.from_id.value = -1
 
     def run(self):
         total_step = 1
@@ -149,19 +148,23 @@ class Worker(mp.Process):
                     
                     # check copy
                     if self.from_id.value != -1:
-                        self.env.model.model.load_state_dict(self.global_params[self.from_id.value])
                         s_ : torch.Tensor = self.global_states[self.index]
+                        
+                        # load parameter
+                        convert_parameters.vector_to_parameters(s_[:env.observation_space.shape[0]], env.model.GetParameter())
+
                         self.from_id.value = -1
+                        
+                    if self.to_id.value != -1:
+                        self.to_id.value = -1
                 
                 s : torch.Tensor = s_
                 total_step += 1
 
         self.res_queue.put(None)
     
-    # load env from another worker
+    # load weight and state from another worker
     def loadfrom(self, from_id):
-        assert from_id != -1
-
         self.from_id.value = from_id
 
         # copy state
@@ -191,11 +194,15 @@ if __name__ == "__main__":
     gnet = Net(N_S, N_A)        # global network
     gnet.share_memory()         # share the global parameters in multiprocessing
 
+    opt = SharedAdam(gnet.parameters(), lr=1e-4, betas=(0.95, 0.999))  # global optimizer
+
     if not checkpoints is None:
         if "checkpoint" in checkpoints:
-            gnet.load_state_dict(torch.load(os.path.join(DIR_CHECKPOINT, "checkpoint")))
+            state = torch.load(os.path.join(DIR_CHECKPOINT, "checkpoint"))
+            gnet.load_state_dict(state["model"])
+            opt.load_state_dict(state["optimizer"])
+            del state
 
-    opt = SharedAdam(gnet.parameters(), lr=1e-4, betas=(0.95, 0.999))  # global optimizer
     global_ep, global_ep_r, res_queue, global_states, global_params = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)]),  mp.Manager().list([None for i in range(n_processes)])
 
     sync_cond = mp.Condition(mp.Lock())
@@ -235,7 +242,7 @@ if __name__ == "__main__":
 
         Logger.Print("main", True, "Exploit Stage Complete.")
 
-        torch.save(gnet.state_dict(), os.path.join(DIR_CHECKPOINT, "checkpoint"))
+        torch.save({"model":gnet.state_dict(), "optimizer":opt.state_dict()}, os.path.join(DIR_CHECKPOINT, "checkpoint"))
 
         Logger.Print("main", True, "Making Checkpoint OK.")
 
