@@ -1,5 +1,7 @@
 import time
 import torch
+import re
+from torch._C import device
 from torch.utils.data import Dataset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
@@ -9,7 +11,9 @@ from hyperparameter import Hyperparameter
 
 from logger import Logger
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+devicetype = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+devicecount = torch.cuda.device_count()
 
 training_data = datasets.MNIST(
     root="data",
@@ -35,13 +39,25 @@ class MNIST_CNN(AbstractModel):
     def HyperparameterSpecification(): # Hyperparameter Specification
         # Specify your hyperparameters
         hyperparameter = Hyperparameter()
-        hyperparameter.Register("LearningRate", 1, (0, 10), False, False) # Float, Changable
-        hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
+        hyperparameter.Register("LearningRate", 0.001, (0, 0.005), False, False) # Float, Changable
+        hyperparameter.Register("WeightDecay", 0.001, (0, 0.01), False, False) # Float, Changable
+
+        # Model structure related hyperparameter was disabled
+        # hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
         return hyperparameter
         
     def Build(self): # Build Model
         _superself = self
         # Define Your Model Here
+
+        # Get CUDA Information
+        device_id = re.search(r'\d+', self.name)
+        if device_id is None:
+            self.device = devicetype
+            Logger.Print(self.name, False, "Allocated on fallback device", self.device)
+        else:
+            self.device = int(device_id.group()) % devicecount
+            Logger.Print(self.name, True, "Allocated on device", self.device)
 
         # MNIST CNN MODEL
         class CNN(torch.nn.Module):
@@ -71,14 +87,14 @@ class MNIST_CNN(AbstractModel):
                     torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
 
                 # L4 FC 4x4x128 inputs -> 625 outputs
-                self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, _superself.hyper.Get("FC_INPUT_SIZE"), bias=True)
+                self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, 625, bias=True)
                 torch.nn.init.xavier_uniform_(self.fc_layer1.weight)
                 self.fc_layer4 = torch.nn.Sequential(
                     self.fc_layer1,
                     torch.nn.ReLU(),
                     torch.nn.Dropout(p=1 - self.keep_prob))
                 # L5 Final FC 625 inputs -> 10 outputs
-                self.fc_layer5 = torch.nn.Linear(_superself.hyper.Get("FC_INPUT_SIZE"), 10, bias=True)
+                self.fc_layer5 = torch.nn.Linear(625, 10, bias=True)
                 torch.nn.init.xavier_uniform_(self.fc_layer5.weight)
 
             def forward(self, x):
@@ -107,9 +123,13 @@ class MNIST_CNN(AbstractModel):
                         p -= lr * p.grad
         # END OF OPTIMIZER
 
-        self.model = CNN().to(device)
-        self.criterion = torch.nn.CrossEntropyLoss().to(device)
-        self.optimizer = AdjustableLearningRateOptimizer(self.model.parameters())
+        self.model = CNN().to(self.device)
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(), 
+            lr = self.hyper.Get("LearningRate"), 
+            weight_decay=self.hyper.Get("WeightDecay")
+        )
     
     def Train(self) -> float: # Train Model (for each Step)
         
@@ -118,9 +138,15 @@ class MNIST_CNN(AbstractModel):
         avg_cost = 0
         total_batch = len(data_loader)
 
+        for i in range(len(self.optimizer.param_groups)):
+            # Apply LR
+            self.optimizer.param_groups[i]['lr'] = self.hyper.Get("LearningRate")
+            # Apply WeightDecay        
+            self.optimizer.param_groups[i]['lr'] = self.hyper.Get("WeightDecay")
+
         for X, Y in data_loader: # mini batch - label
-            X = X.to(device)
-            Y = Y.to(device)
+            X = X.to(self.device)
+            Y = Y.to(self.device)
             
             self.optimizer.zero_grad()
             hypothesis = self.model(X)
@@ -130,7 +156,7 @@ class MNIST_CNN(AbstractModel):
             self.optimizer.step()
         
         batch_time = time.time() - batch_time
-
+        
         Logger.Print(self.name, True, '[Elapsed : {}] cost = {:>.9}'.format(batch_time, avg_cost))
         
         return avg_cost

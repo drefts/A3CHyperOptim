@@ -24,7 +24,6 @@ class Logger:
             mark = _bcolors.OKBLUE + "+" + _bcolors.ENDC
         else:
             mark = _bcolors.FAIL + "-" + _bcolors.ENDC
-            print(owner)
         if owner in Logger._owners:
             owner = _bcolors.OKCYAN + owner + _bcolors.ENDC
             print(f"[{mark}] <{owner}> : {' '.join(map(lambda x: str(x), args))}\n")

@@ -9,6 +9,7 @@ Modified from https://github.com/MorvanZhou/pytorch-A3C - MIT License
 from queue import Empty
 import numpy as np
 import torch
+from torch import cuda
 from torch._C import device
 import torch.nn as nn
 from utils import state_wrap, set_init, push_and_pull, record, GetMaxParam
@@ -29,8 +30,9 @@ os.environ["OMP_NUM_THREADS"] = "1"
 UPDATE_GLOBAL_ITER = 4
 GAMMA = 0.9
 MAX_EP = 3000
-MAX_EP_STEP = 20
-N_DROP = 1
+MAX_EP_STEP = 12
+N_DROP = 2
+N_WORKERS = 4
 
 env = HPOptEnv(MNIST_CNN, MAX_EP, GetMaxParam(MNIST_CNN))
 
@@ -162,6 +164,11 @@ class Worker(mp.Process):
         # copy state dict
         self.env.model.model.load_state_dict(worker.env.model.model.state_dict())
 
+        try:
+            self.env.model.model.optimizer.load_state_dict(worker.env.model.model.optimizer.state_dict())
+        except:
+            pass
+        
         # copy state
         self.global_states[self.index] = worker.global_states[worker.index]
         
@@ -178,8 +185,7 @@ if __name__ == "__main__":
 
     GetMaxParam(MNIST_CNN, True) # Print Model Specification
 
-    n_processes = mp.cpu_count()
-    n_processes = 4
+    n_processes = N_WORKERS
 
     gnet = Net(N_S, N_A)        # global network
     gnet.share_memory()         # share the global parameters in multiprocessing

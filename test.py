@@ -19,7 +19,7 @@ env = HPOptEnv(MNIST_CNN, 10, GetMaxParam(MNIST_CNN), "main")
 
 _, reward, done, _ = env.step(env.action_space.sample())
 
-env.model.optimizer = Adam(env.model.model.parameters(), 0.001)
+env.model.optimizer = Adam(env.model.model.parameters(), lr=0.001, weight_decay=0.01)
 
 # %%
 
