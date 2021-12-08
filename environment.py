@@ -99,7 +99,7 @@ class HPOptEnv(gym.Env):
         Logger.Print(self.name,True, f"Hyperparameter State\n{self.hyper.GetParameterString()}")
 
         if len(self.loss_buffer) > 0:
-            Logger.UpdatePlot(self.name, x=self.state - 1, y=self.loss_buffer[-1])
+            Logger.UpdatePlot(self.name, x=self.state, y=self.loss_buffer[-1])
             
 
     def _take_action(self, action):
@@ -130,7 +130,7 @@ class HPOptEnv(gym.Env):
     def _get_reward(self):
         """ Reward is given for XY. """
         if self.state == self.max_epoch:
-            reward = self.model.Validate()[1].item() # accuracy
+            reward = -self.model.Validate()[0].item() # accuracy
             self.state = self._EnvState.END.value
         elif len(self.loss_buffer) <= 1:
             reward = 0
