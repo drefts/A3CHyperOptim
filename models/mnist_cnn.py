@@ -60,7 +60,7 @@ class MNIST_CNN(AbstractModel):
             self.device = devicetype
             Logger.Print(self.name, False, "Allocated on fallback device", self.device)
         else:
-            self.device = int(device_id.group()) % devicecount
+            self.device = torch.device("cuda", int(device_id.group()) % devicecount)
             Logger.Print(self.name, True, "Allocated on device", self.device)
 
         # MNIST CNN MODEL
