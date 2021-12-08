@@ -189,8 +189,9 @@ if __name__ == "__main__":
     gnet = Net(N_S, N_A)        # global network
     gnet.share_memory()         # share the global parameters in multiprocessing
 
-    if "checkpoint" in checkpoints:
-        gnet.load_state_dict(torch.load(os.path.join(DIR_CHECKPOINT, "checkpoint")))
+    if not checkpoints is None:
+        if "checkpoint" in checkpoints:
+            gnet.load_state_dict(torch.load(os.path.join(DIR_CHECKPOINT, "checkpoint")))
 
     opt = SharedAdam(gnet.parameters(), lr=1e-4, betas=(0.95, 0.999))  # global optimizer
     global_ep, global_ep_r, res_queue, global_states, global_params = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)]),  mp.Manager().list([None for i in range(n_processes)])
