@@ -151,7 +151,7 @@ class Worker(mp.Process):
                         s_ : torch.Tensor = self.global_states[self.index]
                         
                         # load parameter
-                        convert_parameters.vector_to_parameters(s_[N_A:][:self.env.model.GetParameterSize()], self.env.model.GetParameter())
+                        convert_parameters.vector_to_parameters(s_[N_A:][:self.env.model.GetParameterSize()].to(device=self.env.model.model.device), self.env.model.GetParameter())
 
                         self.from_id.value = -1
                                     
