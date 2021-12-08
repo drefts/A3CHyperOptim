@@ -27,15 +27,17 @@ def Count_Parameters(model):
 # %%
 def GetMaxParam(model : type, verbose : bool = False):
     env = environment.HPOptEnv(model, 1)
-
-    max_hyper = [env.hyper.range[n][1] for n in env.hyper.GetNames()]
-
-    env.step(max_hyper)
+    
+    env.reset()
 
     max_param = env.model.GetParameterSize()
 
     if verbose:
         Count_Parameters(env.model.model)
+
+    del env.model.model
+    del env.model
+    del env
 
     return max_param
 

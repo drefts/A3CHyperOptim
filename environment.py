@@ -86,9 +86,9 @@ class HPOptEnv(gym.Env):
         self.rewards = []
         self.loss_buffer = []
         self.model : AbstractModel = self.modeltype(self.modeltype.HyperparameterSpecification(), self.name)
+        self.model.Build()
         self.hyper : Hyperparameter = self.model.GetHyperParameter()
         self.observation_space = spaces.Dict({"theta": self.model.GenerateSpace(self.max_params), "lambda": self.hyper.GenerateSpace()})
-        self.model.Build()
 
         return torch.cat([torch.from_numpy(self.observation_space.sample()["theta"]).cpu(), torch.from_numpy(np.array(list(self.hyper.params.values()), dtype=np.float32))][::-1])
 
