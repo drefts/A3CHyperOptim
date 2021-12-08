@@ -10,7 +10,7 @@ from torch.nn.utils import convert_parameters
 class AbstractModel:
     def __init__(self, hyper : Hyperparameter, name : str = '') -> None:
         self.hyper = hyper # Hyperparameter Set
-        self.model = Module()
+        self.model = None
         self.name = name
     
     @staticmethod

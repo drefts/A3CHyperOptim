@@ -23,21 +23,18 @@ from models.mnist_cnn import MNIST_CNN
 
 from logger import Logger
 
+from settings import *
+
 os.environ["OMP_NUM_THREADS"] = "1"
 
 # %%
 
-UPDATE_GLOBAL_ITER = 4
-GAMMA = 0.9
-MAX_EP = 3000
-MAX_EP_STEP = 12
-N_DROP = 2
-N_WORKERS = 4
-
-env = HPOptEnv(MNIST_CNN, MAX_EP, GetMaxParam(MNIST_CNN))
+env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, GetMaxParam(MNIST_CNN))
 
 N_S = GetMaxParam(MNIST_CNN)
 N_A = env.action_space.shape[0]
+
+del env
 
 # %%
 
@@ -53,6 +50,8 @@ class Net(nn.Module):
         self.v = nn.Linear(10, 1)
         set_init([self.a1, self.mu, self.sigma, self.c1, self.v])
         self.distribution = torch.distributions.MultivariateNormal
+        self.from_id = torch.multiprocessing.Value('i')
+        self.from_id.value = -1
 
     def forward(self, x):
         a1 = F.relu6(self.a1(x))
@@ -87,7 +86,7 @@ class Net(nn.Module):
 
 
 class Worker(mp.Process):
-    def __init__(self, gnet, opt, global_ep, global_ep_r, res_queue, sync_sema, sync_cond, global_states, name):
+    def __init__(self, gnet, opt, global_ep, global_ep_r, res_queue, sync_sema, sync_cond, global_states, global_params, name):
         super(Worker, self).__init__()
         self.name = 'w%i' % name
         self.index = name
@@ -97,7 +96,8 @@ class Worker(mp.Process):
         self.sync_sema = sync_sema
         self.sync_cond = sync_cond
         self.global_states = global_states
-        self.env = HPOptEnv(MNIST_CNN, MAX_EP, GetMaxParam(MNIST_CNN), self.name)
+        self.global_params = global_params
+        self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, GetMaxParam(MNIST_CNN), self.name)
 
     def run(self):
         total_step = 1
@@ -128,6 +128,7 @@ class Worker(mp.Process):
 
                     # dropping
                     self.global_states[self.index] = s_.detach()
+                    self.global_params[self.index] = self.env.model.model.state_dict()
 
                     Logger.Print("main", True, f"{self.name} Ready To Sync")
                     
@@ -141,10 +142,14 @@ class Worker(mp.Process):
                     
                     self.sync_cond.release()
 
-                    s_ : torch.Tensor = self.global_states[self.index]
-
                     if done:  # done and print information
                         break
+                    
+                    # check copy
+                    if self.from_id.value != -1:
+                        self.env.model.model.load_state_dict(self.global_params[self.index])
+                        s_ : torch.Tensor = self.global_states[self.index]
+                        self.from_id.value = -1
                 
                 s : torch.Tensor = s_
                 total_step += 1
@@ -152,30 +157,24 @@ class Worker(mp.Process):
         self.res_queue.put(None)
     
     # load env from another worker
-    def loadfrom(self, worker):
-        worker : Worker = worker
-        # copy env
-        self.env.loss_buffer = worker.env.loss_buffer
-        self.env.rewards = worker.env.rewards
-        self.env.state = worker.env.state
-        self.env.observation_space = worker.env.observation_space
-        self.env.action_space = worker.env.action_space
+    def loadfrom(self, from_id):
+        assert from_id != -1
 
-        # copy state dict
-        self.env.model.model.load_state_dict(worker.env.model.model.state_dict())
+        self.from_id.value = from_id
 
-        try:
-            self.env.model.model.optimizer.load_state_dict(worker.env.model.model.optimizer.state_dict())
-        except:
-            pass
-        
         # copy state
-        self.global_states[self.index] = worker.global_states[worker.index]
+        self.global_params[self.index] = self.global_params[from_id]
+        self.global_states[self.index] = self.global_states[from_id]
+
+    def save(self):
+        pass
         
 # %%
 
 if __name__ == "__main__":
     
+    checkpoints = setup()
+
     torch.manual_seed(777)
 
     if device == 'cuda':
@@ -189,8 +188,12 @@ if __name__ == "__main__":
 
     gnet = Net(N_S, N_A)        # global network
     gnet.share_memory()         # share the global parameters in multiprocessing
+
+    if "checkpoint" in checkpoints:
+        gnet.load_state_dict(torch.load(os.path.join(DIR_CHECKPOINT, "checkpoint")))
+
     opt = SharedAdam(gnet.parameters(), lr=1e-4, betas=(0.95, 0.999))  # global optimizer
-    global_ep, global_ep_r, res_queue, global_states = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)])
+    global_ep, global_ep_r, res_queue, global_states, global_params = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)]),  mp.Manager().list([None for i in range(n_processes)])
 
     sync_cond = mp.Condition(mp.Lock())
 
@@ -201,7 +204,7 @@ if __name__ == "__main__":
     Logger.Print("main", True, "Initialization Complete")
 
     # parallel training
-    workers = [Worker(gnet, opt, global_ep, global_ep_r, res_queue, sync_sema[i], sync_cond, global_states, i) for i in range(n_processes)]
+    workers = [Worker(gnet, opt, global_ep, global_ep_r, res_queue, sync_sema[i], sync_cond, global_states, global_params, i) for i in range(n_processes)]
     [w.start() for w in workers]
     res = []                    # record episode reward to plot
     while True:
@@ -228,6 +231,10 @@ if __name__ == "__main__":
         # end of dropping
 
         Logger.Print("main", True, "Exploit Stage Complete.")
+
+        torch.save(gnet.state_dict(), os.path.join(DIR_CHECKPOINT, "checkpoint"))
+
+        Logger.Print("main", True, "Making Checkpoint OK.")
 
         sync_cond.notify_all()
 

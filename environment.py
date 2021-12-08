@@ -8,8 +8,11 @@ from enum import Enum
 from copy import copy
 from torch.nn.utils import convert_parameters
 import numpy as np
+import pandas as pd
 
 from logger import Logger
+
+from settings import DIR_RESULT
 
 class HPOptEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -33,7 +36,7 @@ class HPOptEnv(gym.Env):
         if max_params == None:
             self.model.Build()
         self.observation_space = spaces.Dict({"theta": self.model.GenerateSpace(self.max_params), "lambda": self.hyper.GenerateSpace()})
-
+        self.dataframe = pd.DataFrame({})
         self.rewards = []
 
     def step(self, action):
@@ -66,12 +69,19 @@ class HPOptEnv(gym.Env):
                  use this for learning.
         """
         self._take_action(action)
-        reward = self._get_reward()
+        reward = self._get_reward()        
         ob = torch.cat([convert_parameters.parameters_to_vector(self.model.model.parameters()).cpu(), torch.from_numpy(np.array(list(self.hyper.params.values()), dtype=np.float32))][::-1])
         episode_over = self.state == HPOptEnv._EnvState.END.value
         return ob, reward, episode_over, {}
 
     def reset(self):
+        # save result
+        if self.state == HPOptEnv._EnvState.END.value:
+            import os
+            # save episode result
+            self.dataframe = self.dataframe.append(pd.DataFrame({"Loss":self.loss_buffer, "Rewards": self.rewards}))
+            self.dataframe.to_csv(os.path.join(DIR_RESULT, f"{self.name}_progress.csv"))
+        
         self.state = HPOptEnv._EnvState.CLEAN.value
         self.rewards = []
         self.loss_buffer = []
@@ -89,7 +99,8 @@ class HPOptEnv(gym.Env):
         Logger.Print(self.name,True, f"Hyperparameter State\n{self.hyper.GetParameterString()}")
 
         if len(self.loss_buffer) > 0:
-            Logger.UpdatePlot(self.name, x=self.state, y=self.loss_buffer[-1])
+            Logger.UpdatePlot(self.name, x=self.state - 1, y=self.loss_buffer[-1])
+            
 
     def _take_action(self, action):
         # Hyperparameter Action Apply
@@ -111,15 +122,13 @@ class HPOptEnv(gym.Env):
         
         self.loss_buffer.append(self.model.Train().item()) # Save Reward
 
-        if self.state != HPOptEnv._EnvState.END.value and self.state < self.max_epoch:
-            self.state += 1
-        else:
-            self.state = HPOptEnv._EnvState.END.value
+        self.state += 1
 
     def _get_reward(self):
         """ Reward is given for XY. """
-        if self.state == HPOptEnv._EnvState.END.value:
-            reward =  -self.model.Validate()[0]
+        if self.state == self.max_epoch:
+            reward =  -self.model.Validate()[0].item()
+            self.state = self._EnvState.END.value
         elif len(self.loss_buffer) <= 1:
             reward = 0
         else:

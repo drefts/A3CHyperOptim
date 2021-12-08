@@ -1,4 +1,6 @@
 from matplotlib import axes, pyplot as plt
+from settings import *
+import pandas as pd
 
 class _bcolors:
     HEADER = '\033[95m'
@@ -27,7 +29,7 @@ class Logger:
         if owner in Logger._owners:
             owner = _bcolors.OKCYAN + owner + _bcolors.ENDC
             print(f"[{mark}] <{owner}> : {' '.join(map(lambda x: str(x), args))}\n")
-    
+
     @staticmethod
     def UpdatePlot(owner : str, **kwargs):
         if owner not in Logger._owners:

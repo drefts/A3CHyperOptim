@@ -35,6 +35,10 @@ data_loader = torch.utils.data.DataLoader(dataset=training_data ,
                                                 drop_last=True)
 
 class MNIST_CNN(AbstractModel):
+    def __init__(self, hyper: Hyperparameter, name: str = '') -> None:
+        super().__init__(hyper, name=name)
+        self.model = None
+
     @staticmethod
     def HyperparameterSpecification(): # Hyperparameter Specification
         # Specify your hyperparameters
@@ -123,7 +127,7 @@ class MNIST_CNN(AbstractModel):
                         p -= lr * p.grad
         # END OF OPTIMIZER
 
-        self.model = CNN().to(self.device)
+        self.model = CNN().to(self.device).share_memory()
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), 
@@ -164,8 +168,8 @@ class MNIST_CNN(AbstractModel):
     
     def Validate(self) -> tuple: # Validate Model
         with torch.no_grad():
-            X_test = test_data.test_data.view(len(test_data), 1, 28, 28).float().to(device)
-            Y_test = test_data.test_labels.to(device)
+            X_test = test_data.test_data.view(len(test_data), 1, 28, 28).float().to(self.device)
+            Y_test = test_data.test_labels.to(self.device)
 
             prediction = self.model(X_test)
             correct_prediction = torch.argmax(prediction, 1) == Y_test

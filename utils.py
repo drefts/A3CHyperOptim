@@ -10,6 +10,8 @@ import environment
 
 from prettytable import PrettyTable
 
+from logger import Logger
+
 def Count_Parameters(model):
     table = PrettyTable(["Modules", "Parameters"])
     total_params = 0
@@ -89,8 +91,9 @@ def record(global_ep, global_ep_r, ep_r, res_queue, name):
         else:
             global_ep_r.value = global_ep_r.value * 0.99 + ep_r * 0.01
     res_queue.put(global_ep_r.value)
-    print(
+    Logger.Print(
         name,
+        True,
         "Ep:", global_ep.value,
-        "| Ep_r: %.0f" % global_ep_r.value,
+        "| Ep reward: %f" % global_ep_r.value,
     )
