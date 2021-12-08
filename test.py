@@ -17,9 +17,9 @@ def GetMaxParam(model : type):
 # %%
 env = HPOptEnv(MNIST_CNN, 10, GetMaxParam(MNIST_CNN), "main")
 
-_, reward, done, _ = env.step(env.action_space.sample())
+env.reset()
 
-env.model.optimizer = Adam(env.model.model.parameters(), lr=0.001, weight_decay=0.01)
+env.model.optimizer = Adam(env.model.model.parameters(), lr=0.001, weight_decay=0)
 
 # %%
 
@@ -28,5 +28,12 @@ done = False
 while(not done):
     _, reward, done, _ = env.step(env.action_space.sample())
     print(env.model.optimizer.param_groups[0]['lr'])
+    if done:
+        break
     env.render()
+# %%
+
+env.model.Validate()
+# %%
+
 # %%
