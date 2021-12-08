@@ -151,7 +151,7 @@ class Worker(mp.Process):
                         s_ : torch.Tensor = self.global_states[self.index]
                         
                         # load parameter
-                        convert_parameters.vector_to_parameters(s_[:N_S], self.env.model.GetParameter())
+                        convert_parameters.vector_to_parameters(s_[N_A:][:self.env.model.GetParameterSize()], self.env.model.GetParameter())
 
                         self.from_id.value = -1
                                     
@@ -239,13 +239,13 @@ if __name__ == "__main__":
 
         Logger.Print("main", True, "Exploit Stage Complete.")
 
-        torch.save({"model":gnet.state_dict(), "optimizer":opt.state_dict()}, os.path.join(DIR_CHECKPOINT, "checkpoint"))
-
-        Logger.Print("main", True, "Making Checkpoint OK.")
-
         sync_cond.notify_all()
 
         sync_cond.release()
+        
+        torch.save({"model":gnet.state_dict(), "optimizer":opt.state_dict()}, os.path.join(DIR_CHECKPOINT, "checkpoint"))
+
+        Logger.Print("main", True, "Making Checkpoint OK.")
 
         # collect reward
         try:
