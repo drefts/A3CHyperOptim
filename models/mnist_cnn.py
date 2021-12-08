@@ -34,7 +34,8 @@ test_data = datasets.MNIST(
 data_loader = torch.utils.data.DataLoader(dataset=training_data ,
                                                 batch_size=48,
                                                 shuffle=True,
-                                                drop_last=True)
+                                                drop_last=True,
+                                                num_workers=0)
 
 class MNIST_CNN(AbstractModel):
     def __init__(self, hyper: Hyperparameter, name: str = '') -> None:
