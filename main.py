@@ -229,7 +229,7 @@ if __name__ == "__main__":
         
         for drop_idx, best_idx in zip(drop, best):
             Logger.Print("main", True, f"Drop w{drop_idx} : {global_value[drop_idx]} <--- {global_value[best_idx]} : w{best_idx} Best")
-            workers[drop_idx].loadfrom(workers[best_idx])
+            workers[drop_idx].loadfrom(best_idx)
 
         # end of dropping
 
