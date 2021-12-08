@@ -52,6 +52,7 @@ class Net(nn.Module):
         self.distribution = torch.distributions.MultivariateNormal
         self.from_id = torch.multiprocessing.Value('i')
         self.from_id.value = -1
+        self.param_queue = torch.multiprocessing.Queue()
 
     def forward(self, x):
         a1 = F.relu6(self.a1(x))
@@ -148,7 +149,7 @@ class Worker(mp.Process):
                     
                     # check copy
                     if self.from_id.value != -1:
-                        self.env.model.model.load_state_dict(self.global_params[self.index])
+                        self.env.model.model.load_state_dict(self.global_params[self.from_id.value])
                         s_ : torch.Tensor = self.global_states[self.index]
                         self.from_id.value = -1
                 
@@ -164,7 +165,6 @@ class Worker(mp.Process):
         self.from_id.value = from_id
 
         # copy state
-        self.global_params[self.index] = self.global_params[from_id]
         self.global_states[self.index] = self.global_states[from_id]
 
     def save(self):
