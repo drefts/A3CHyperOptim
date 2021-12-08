@@ -14,13 +14,13 @@ MAX_EP_STEP = 12
 N_DROP = 1
 
 # The number of total processes (workers)
-N_WORKERS = 12
+N_WORKERS = 8
 
 DIR_RESULT = "./result"
 
 DIR_CHECKPOINT = "./checkpoint"
 
-GPU_MAP = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+GPU_MAP = [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
 
 def setup() -> list:
     from pathlib import Path
