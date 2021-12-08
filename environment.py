@@ -104,6 +104,8 @@ class HPOptEnv(gym.Env):
 
     def _take_action(self, action):
         # Hyperparameter Action Apply
+        # Unused Code
+        """
         if self.state == HPOptEnv._EnvState.CLEAN.value:
             self.model : AbstractModel = self.modeltype(self.modeltype.HyperparameterSpecification(), self.name)
 
@@ -117,7 +119,8 @@ class HPOptEnv(gym.Env):
 
             self.state += 1
             return
-        
+        """
+
         self.model.GetHyperParameter().ApplyAction(action)
         
         self.loss_buffer.append(self.model.Train().item()) # Save Reward

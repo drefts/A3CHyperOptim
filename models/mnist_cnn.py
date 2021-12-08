@@ -127,7 +127,7 @@ class MNIST_CNN(AbstractModel):
                         p -= lr * p.grad
         # END OF OPTIMIZER
 
-        self.model = CNN().to(self.device).share_memory()
+        self.model = CNN().to(self.device)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), 

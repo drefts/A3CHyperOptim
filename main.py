@@ -97,7 +97,7 @@ class Worker(mp.Process):
         self.sync_cond = sync_cond
         self.global_states = global_states
         self.global_params = global_params
-        self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, GetMaxParam(MNIST_CNN), self.name)
+        self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, N_S, self.name)
 
     def run(self):
         total_step = 1
@@ -172,6 +172,7 @@ class Worker(mp.Process):
 # %%
 
 if __name__ == "__main__":
+    torch.multiprocessing.set_start_method('spawn')
     
     checkpoints = setup()
 
