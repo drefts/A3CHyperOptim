@@ -39,7 +39,8 @@ def setup() -> list:
             return filelist
         else:
             if "Y" == input(f"Are you sure that you backed up data? DIR='{DIR_CHECKPOINT}' [Y/N] "):
-                os.remove(os.path.join(DIR_RESULT, f))
+                for f in filelist:
+                    os.remove(os.path.join(DIR_RESULT, f))
             else:
                 raise
     return None
