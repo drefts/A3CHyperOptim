@@ -98,6 +98,7 @@ class Worker(mp.Process):
         self.global_states = global_states
         self.global_params = global_params
         self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, N_S, self.name)
+        self.from_id = mp.Value('i')
 
     def run(self):
         total_step = 1
