@@ -90,7 +90,7 @@ class HPOptEnv(gym.Env):
         self.hyper : Hyperparameter = self.model.GetHyperParameter()
         self.observation_space = spaces.Dict({"theta": self.model.GenerateSpace(self.max_params), "lambda": self.hyper.GenerateSpace()})
 
-        return torch.cat([torch.from_numpy(self.observation_space.sample()["theta"]).cpu(), torch.from_numpy(np.array(list(self.hyper.params.values()), dtype=np.float32))][::-1])
+        return torch.cat([convert_parameters.parameters_to_vector(self.model.model.parameters()).cpu(), torch.from_numpy(np.array(list(self.hyper.params.values()), dtype=np.float32))][::-1])
 
     def render(self, mode='human', close=False):
         Logger.Print(self.name, True, "State", self.state)
