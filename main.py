@@ -148,8 +148,12 @@ class Worker(mp.Process):
                     if self.from_id.value != -1:
                         s_ : torch.Tensor = self.global_states[self.index]
                         
+                        load = s_[N_A:][:self.env.model.GetParameterSize()].to(device=self.env.model.device)
+
                         # load parameter
-                        convert_parameters.vector_to_parameters(s_[N_A:][:self.env.model.GetParameterSize()], self.env.model.GetParameter())
+                        convert_parameters.vector_to_parameters(load, self.env.model.GetParameter())
+
+                        del load
 
                         self.from_id.value = -1
                                     
