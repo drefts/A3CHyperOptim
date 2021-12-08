@@ -151,13 +151,10 @@ class Worker(mp.Process):
                         s_ : torch.Tensor = self.global_states[self.index]
                         
                         # load parameter
-                        convert_parameters.vector_to_parameters(s_[:self.env.observation_space.shape[0]], self.env.model.GetParameter())
+                        convert_parameters.vector_to_parameters(s_[:N_S], self.env.model.GetParameter())
 
                         self.from_id.value = -1
-                        
-                    if self.to_id.value != -1:
-                        self.to_id.value = -1
-                
+                                    
                 s : torch.Tensor = s_
                 total_step += 1
 
