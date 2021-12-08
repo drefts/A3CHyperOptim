@@ -85,7 +85,7 @@ class Net(nn.Module):
 
 
 class Worker(mp.Process):
-    def __init__(self, gnet, opt, global_ep, global_ep_r, res_queue, sync_sema, sync_cond, global_states, global_params, name):
+    def __init__(self, gnet, opt, global_ep, global_ep_r, res_queue, sync_sema, sync_cond, global_states, name):
         super(Worker, self).__init__()
         self.name = 'w%i' % name
         self.index = name
@@ -95,7 +95,6 @@ class Worker(mp.Process):
         self.sync_sema = sync_sema
         self.sync_cond = sync_cond
         self.global_states = global_states
-        self.global_params = global_params
         self.env = HPOptEnv(MNIST_CNN, MAX_EP_STEP, N_S, self.name)
         self.from_id = torch.multiprocessing.Value('i')
         self.from_id.value = -1
@@ -129,7 +128,6 @@ class Worker(mp.Process):
 
                     # dropping
                     self.global_states[self.index] = s_.detach()
-                    self.global_params[self.index] = self.env.model.model.state_dict()
 
                     Logger.Print("main", True, f"{self.name} Ready To Sync")
                     
@@ -200,7 +198,7 @@ if __name__ == "__main__":
             opt.load_state_dict(state["optimizer"])
             del state
 
-    global_ep, global_ep_r, res_queue, global_states, global_params = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)]),  mp.Manager().list([None for i in range(n_processes)])
+    global_ep, global_ep_r, res_queue, global_states = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue(), mp.Manager().list([None for i in range(n_processes)])
 
     sync_cond = mp.Condition(mp.Lock())
 
@@ -211,7 +209,7 @@ if __name__ == "__main__":
     Logger.Print("main", True, "Initialization Complete")
 
     # parallel training
-    workers = [Worker(gnet, opt, global_ep, global_ep_r, res_queue, sync_sema[i], sync_cond, global_states, global_params, i) for i in range(n_processes)]
+    workers = [Worker(gnet, opt, global_ep, global_ep_r, res_queue, sync_sema[i], sync_cond, global_states, i) for i in range(n_processes)]
     [w.start() for w in workers]
     res = []                    # record episode reward to plot
     while True:

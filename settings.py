@@ -1,5 +1,5 @@
 # Sync Period
-UPDATE_GLOBAL_ITER = 2
+UPDATE_GLOBAL_ITER = 4
 
 # Discounting factor of rewards
 GAMMA = 0.9
@@ -8,13 +8,13 @@ GAMMA = 0.9
 MAX_EP = 3000
 
 # Maximum step size for each episodes (epochs for the model)
-MAX_EP_STEP = 4
+MAX_EP_STEP = 12
 
 # The number of dropping worker
 N_DROP = 1
 
 # The number of total processes (workers)
-N_WORKERS = 2
+N_WORKERS = 6
 
 DIR_RESULT = "./result"
 

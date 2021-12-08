@@ -29,6 +29,9 @@ class Logger:
         if owner in Logger._owners:
             owner = _bcolors.OKCYAN + owner + _bcolors.ENDC
             print(f"[{mark}] <{owner}> : {' '.join(map(lambda x: str(x), args))}\n")
+        if owner == "main":
+            with open('log.txt', 'a') as f:
+                f.write(f"[{mark}] <{owner}> : {' '.join(map(lambda x: str(x), args))}\n")
 
     @staticmethod
     def UpdatePlot(owner : str, **kwargs):
