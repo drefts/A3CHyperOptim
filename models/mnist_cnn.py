@@ -11,6 +11,8 @@ from hyperparameter import Hyperparameter
 
 from logger import Logger
 
+from settings import GPU_MAP
+
 devicetype = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 devicecount = torch.cuda.device_count()
@@ -60,7 +62,8 @@ class MNIST_CNN(AbstractModel):
             self.device = devicetype
             Logger.Print(self.name, False, "Allocated on fallback device", self.device)
         else:
-            self.device = torch.device("cuda", int(device_id.group()) % devicecount)
+            self.device = torch.device("cuda", GPU_MAP[int(device_id.group())])
+            # self.device = torch.device("cuda", int(device_id.group()) % devicecount)
             Logger.Print(self.name, True, "Allocated on device", self.device)
 
         # MNIST CNN MODEL
