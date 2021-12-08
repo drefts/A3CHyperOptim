@@ -261,6 +261,8 @@ if __name__ == "__main__":
             pass
     [w.join() for w in workers]
 
+    torch.save(res, 'EpisodeReward')
+    
     import matplotlib.pyplot as plt
     plt.plot(res)
     plt.ylabel('Moving average ep reward')
