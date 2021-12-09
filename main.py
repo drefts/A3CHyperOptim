@@ -111,8 +111,7 @@ class Worker(mp.Process):
                 s_, r, done, _ = self.env.step(a.squeeze())
                 s_ = s_.cpu()
 
-                if self.name == 'w0':
-                    self.env.render()
+                self.env.render()
                 
                 if t == MAX_EP_STEP - 1:
                     done = True
@@ -145,7 +144,9 @@ class Worker(mp.Process):
                         break
                     
                     # check copy
-                    if self.from_id.value != -1:
+                    if not done and self.from_id.value != -1:
+                        Logger.Print(self.name, True, "Load", self.from_id.value)
+
                         s_ : torch.Tensor = self.global_states[self.index]
                         
                         load = s_[N_A:][:self.env.model.GetParameterSize()].to(device=self.env.model.device)
@@ -159,7 +160,7 @@ class Worker(mp.Process):
                                     
                 s : torch.Tensor = s_
                 total_step += 1
-
+            Logger.Print(self.name, True, "End Of Episode")
         self.res_queue.put(None)
     
     # load weight and state from another worker

@@ -36,7 +36,6 @@ class HPOptEnv(gym.Env):
         if max_params == None:
             self.model.Build()
         self.observation_space = spaces.Dict({"theta": self.model.GenerateSpace(self.max_params), "lambda": self.hyper.GenerateSpace()})
-        self.dataframe = pd.DataFrame({})
         self.rewards = []
 
     def step(self, action):
@@ -77,10 +76,7 @@ class HPOptEnv(gym.Env):
     def reset(self):
         # save result
         if self.state == HPOptEnv._EnvState.END.value:
-            import os
-            # save episode result
-            self.dataframe = self.dataframe.append(pd.DataFrame({"Loss":self.loss_buffer, "Rewards": self.rewards}))
-            self.dataframe.to_csv(os.path.join(DIR_RESULT, f"{self.name}_progress.csv"))
+            Logger.Print(self.name, True, "Episode Summary", self.loss_buffer, self.rewards)
         
         self.state = HPOptEnv._EnvState.CLEAN.value
         self.rewards = []
@@ -96,7 +92,7 @@ class HPOptEnv(gym.Env):
         Logger.Print(self.name, True, "State", self.state)
         if len(self.rewards) > 0:
             Logger.Print(self.name, True, "Reward", self.rewards[-1])
-        Logger.Print(self.name,True, f"Hyperparameter State\n{self.hyper.GetParameterString()}")
+        Logger.Print(self.name, True, f"Hyperparameter State\n{self.hyper.GetParameterString()}", debug=True)
 
         if len(self.loss_buffer) > 0:
             Logger.UpdatePlot(self.name, x=self.state, y=self.loss_buffer[-1])
