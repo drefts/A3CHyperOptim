@@ -29,11 +29,9 @@ def setup() -> list:
     Path(DIR_CHECKPOINT).mkdir(parents=True, exist_ok=True) # Checkpoint file dir
     filelist = [ f for f in os.listdir(DIR_RESULT) ]
     if len(filelist) > 0:
-        if "Y" == input(f"Are you sure that you backed up data? DIR='{DIR_RESULT}' [Y/N] "):
+        if "Y" == input(f"Would you like to delete log files? DIR='{DIR_RESULT}' [Y/N] "):
             for f in filelist:
                 os.remove(os.path.join(DIR_RESULT, f))
-        else:
-            raise
     filelist = [ f for f in os.listdir(DIR_CHECKPOINT) ]
     if len(filelist) > 0:
         if "Y" == input(f"Do you want to load checkpoint? DIR='{DIR_CHECKPOINT}' [Y/N] "):
