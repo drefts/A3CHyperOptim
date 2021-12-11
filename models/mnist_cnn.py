@@ -47,7 +47,7 @@ class MNIST_CNN(AbstractModel):
         # Specify your hyperparameters
         hyperparameter = Hyperparameter()
         hyperparameter.Register("LearningRate", 0.001, (0, 0.002), False, False) # Float, Changable
-        hyperparameter.Register("WeightDecay", 0.005, (0, 0.01), False, False) # Float, Changable
+        hyperparameter.Register("WeightDecay", 1e-5, (1e-6, 1e-4), False, False) # Float, Changable
 
         # Model structure related hyperparameter was disabled
         # hyperparameter.Register("FC_INPUT_SIZE", 5, (5, 20), True, True) # Int, Determined on startup
@@ -95,15 +95,12 @@ class MNIST_CNN(AbstractModel):
                     torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
 
                 # L4 FC 4x4x128 inputs -> 625 outputs
-                self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, 625, bias=True)
+                self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, 10, bias=True)
                 torch.nn.init.xavier_uniform_(self.fc_layer1.weight)
                 self.fc_layer4 = torch.nn.Sequential(
                     self.fc_layer1,
-                    torch.nn.ReLU(),
-                    torch.nn.Dropout(p=1 - self.keep_prob))
-                # L5 Final FC 625 inputs -> 10 outputs
-                self.fc_layer5 = torch.nn.Linear(625, 10, bias=True)
-                torch.nn.init.xavier_uniform_(self.fc_layer5.weight)
+                    torch.nn.Softmax()
+                )
 
             def forward(self, x):
                 out = self.cm_layer1(x)
@@ -111,7 +108,6 @@ class MNIST_CNN(AbstractModel):
                 out = self.cm_layer3(out)
                 out = out.view(out.size(0), -1)   # Flatten them for FC
                 out = self.fc_layer4(out)
-                out = self.fc_layer5(out)
                 return out
         # END OF MODEL
 
