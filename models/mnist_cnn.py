@@ -97,17 +97,13 @@ class MNIST_CNN(AbstractModel):
                 # L4 FC 4x4x128 inputs -> 625 outputs
                 self.fc_layer1 = torch.nn.Linear(4 * 4 * 128, 10, bias=True)
                 torch.nn.init.xavier_uniform_(self.fc_layer1.weight)
-                self.fc_layer4 = torch.nn.Sequential(
-                    self.fc_layer1,
-                    torch.nn.Softmax()
-                )
 
             def forward(self, x):
                 out = self.cm_layer1(x)
                 out = self.cm_layer2(out)
                 out = self.cm_layer3(out)
                 out = out.view(out.size(0), -1)   # Flatten them for FC
-                out = self.fc_layer4(out)
+                out = self.fc_layer1(out)
                 return out
         # END OF MODEL
 
