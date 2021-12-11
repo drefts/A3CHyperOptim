@@ -126,6 +126,7 @@ class HPOptEnv(gym.Env):
     def _get_reward(self):
         """ Reward is given for XY. """
         reward = -self.model.Validate()[0].item() # accuracy
+        Logger.Print(self.name, True, "Validation Loss", reward)
         if len(self.rewards) > 0:
             reward -= self.rewards[-1]
         self.rewards.append(reward)
