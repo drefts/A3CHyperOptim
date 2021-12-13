@@ -1,0 +1,17 @@
+Initialization Complete
+w0 Ready To Sync
+Sync Complete. Starting Exploit Stage.
+Exploit Stage Complete.
+Making Checkpoint OK.
+w0 Ready To Sync
+Sync Complete. Starting Exploit Stage.
+Exploit Stage Complete.
+Making Checkpoint OK.
+w0 Ready To Sync
+Sync Complete. Starting Exploit Stage.
+Exploit Stage Complete.
+Making Checkpoint OK.
+w0 Ready To Sync
+Sync Complete. Starting Exploit Stage.
+Exploit Stage Complete.
+Making Checkpoint OK.
