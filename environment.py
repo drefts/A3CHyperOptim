@@ -127,6 +127,6 @@ class HPOptEnv(gym.Env):
         """ Reward is given for XY. """
         if self.state == self.max_epoch:
             self.state = self._EnvState.END.value
-        reward = -self.model.Validate()[0].item() # accuracy
+        reward = self.model.Validate()[1].item() # accuracy
         self.rewards.append(reward)
         return reward
