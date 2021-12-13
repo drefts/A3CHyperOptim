@@ -20,7 +20,7 @@ DIR_RESULT = "./result"
 
 DIR_CHECKPOINT = "./checkpoint"
 
-GPU_MAP = [1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
+GPU_MAP = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 def setup() -> list:
     from pathlib import Path
