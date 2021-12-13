@@ -40,6 +40,6 @@ Validation loss after 364 episodes.
 
 Without A3CHyperOptim : Using Adam optimizer with lr=0.001, weight_decay=0
 
-With A3CHyperOptim : Using Adam with A3CHyperOptim with dynamic lr and weight_decay ((0, 0.002), (1e-6, 1e-4))
+With A3CHyperOptim : Using Adam with A3CHyperOptim, episodes=364, dynamic lr and weight_decay ([0, 0.002], [1e-6, 1e-4])
 
 ![Figure_5](images/val_acc.png)
