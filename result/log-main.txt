@@ -13898,14 +13898,3 @@ Sync Complete. Starting Exploit Stage.
 Drop w0 : -15.321065902709961 <--- -15.321065902709961 : w3 Best
 Exploit Stage Complete.
 Making Checkpoint OK.
-w1 Ready To Sync
-w2 Ready To Sync
-w3 Ready To Sync
-w0 Ready To Sync
-Sync Complete. Starting Exploit Stage.
-Drop w0 : -15.324931144714355 <--- -15.324931144714355 : w3 Best
-Exploit Stage Complete.
-Making Checkpoint OK.
-w1 Ready To Sync
-w2 Ready To Sync
-w3 Ready To Sync
