@@ -18,6 +18,8 @@ You can find an example in [models/mnist_cnn.py](models/mnist_cnn.py)
 
 ### Experiment Result
 
+See [result.ipynb](result.ipynb)
+
 #### Average reward of workers during epochs
 
 Experiment Condition : 4 workers, 16 steps per episode, 1 dropping, gamma 0.9, update period 4
